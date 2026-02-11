@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { sign } from "hono/jwt";
 import { prisma } from "../lib/prisma.js";
 import { loginSchema } from "../schemas/auth.schema.js";
+import { auth } from "../middlewares/auth.middleware.js";
+import { addToBlacklist } from "../lib/token-blacklist.js";
 
 const authRoutes = new Hono();
 
@@ -34,6 +36,12 @@ authRoutes.post("/login", async (c) => {
   );
 
   return c.json({ token });
+});
+
+authRoutes.post("/logout", auth, async (c) => {
+  const token = c.req.header("Authorization")!.slice(7);
+  addToBlacklist(token);
+  return c.json({ message: "Déconnexion réussie" });
 });
 
 export { authRoutes };

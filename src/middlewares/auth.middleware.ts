@@ -1,5 +1,6 @@
 import type { Context, Next } from "hono";
 import { verify } from "hono/jwt";
+import { isBlacklisted } from "../lib/token-blacklist.js";
 
 export const auth = async (c: Context, next: Next) => {
   const header = c.req.header("Authorization");
@@ -9,6 +10,10 @@ export const auth = async (c: Context, next: Next) => {
   }
 
   const token = header.slice(7);
+
+  if (isBlacklisted(token)) {
+    return c.json({ error: "Token révoqué" }, 401);
+  }
 
   try {
     const payload = await verify(token, process.env.JWT_SECRET!, "HS256");
